@@ -1,0 +1,20 @@
+PODS:
+  - SnapKit (5.6.0)
+  - SwiftBoost (4.0.3)
+
+DEPENDENCIES:
+  - SnapKit (~> 5.6.0)
+  - SwiftBoost
+
+SPEC REPOS:
+  trunk:
+    - SnapKit
+    - SwiftBoost
+
+SPEC CHECKSUMS:
+  SnapKit: e01d52ebb8ddbc333eefe2132acf85c8227d9c25
+  SwiftBoost: e2f5e81e7ee1ba44714d3affff5522bacd93eef2
+
+PODFILE CHECKSUM: a479b3799716952f626c61b77e5fc014e6412e5e
+
+COCOAPODS: 1.12.0
