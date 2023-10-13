@@ -12,21 +12,16 @@ enum RequestType: String {
     case POST
 }
 
-struct ApiService {
-    static let shared = ApiService()
+enum CustomError: Error {
+    case badStatusCode
+}
 
-    private init() {}
+struct ApiService {
 
     let baseURL = "https://api.openweathermap.org"
     let apiKey = "ba4f434450c83f44645470b61ee14800"
 
-    func parse(data: Data) {
-        if let json = try? JSONSerialization.jsonObject(with: data) as? [Any] {
-            print (json)
-        }
-    }
-
-    func sendWeatherRequest(cityName: String, endpoint: String, requestType: RequestType, parser: @escaping (Data) -> Void) {
+    func sendWeatherRequest(cityName: String, requestType: RequestType, completion: @escaping (Result<WeatherResponce, Error>) -> Void) {
         var urlComponents = URLComponents(string: "\(baseURL)/data/2.5/weather")
 
         urlComponents?.queryItems = [
@@ -41,15 +36,32 @@ struct ApiService {
         request.httpMethod = requestType.rawValue
 
         let task = URLSession.shared.dataTask (with: request) { data, response, error in
-            guard error == nil else { return }
+            if let error {
+                completion(.failure(error))
+                return
+            }
+
+            if let response, let castedResponse = response as? HTTPURLResponse, !(200..<300).contains(castedResponse.statusCode) {
+                completion(.failure(CustomError.badStatusCode))
+                return
+            }
+            
             if let data {
-                parse(data: data)
+                do {
+                    let response = try JSONDecoder().decode(WeatherResponce.self, from: data)
+                    completion(.success(response))
+                }
+                catch {
+                    completion(.failure(error))
+                }
             }
         }
+        
         task.resume()
+
     }
 
-    func sendForecastRequest(cityName: String, requestType: RequestType, parser: @escaping (Data) -> Void) {
+    func sendForecastRequest(cityName: String, requestType: RequestType, completion: @escaping (Result<ForecastResponce, Error>) -> Void) {
         var urlComponents = URLComponents(string: "\(baseURL)/data/2.5/forecast")
 
         urlComponents?.queryItems = [
@@ -64,12 +76,27 @@ struct ApiService {
         request.httpMethod = requestType.rawValue
 
         let task = URLSession.shared.dataTask (with: request) { data, response, error in
-            guard error == nil else { return }
+            if let error {
+                completion(.failure(error))
+                return
+            }
+
+            if let response, let castedResponse = response as? HTTPURLResponse, !(200..<300).contains(castedResponse.statusCode) {
+                completion(.failure(CustomError.badStatusCode))
+                return
+            }
+
             if let data {
-                parse(data: data)
+                do {
+                    let response = try JSONDecoder().decode(ForecastResponce.self, from: data)
+                    completion(.success(response))
+                }
+                catch {
+                    completion(.failure(error))
+                }
             }
         }
+
         task.resume()
     }
-
 }

@@ -8,8 +8,21 @@
 import UIKit
 import SnapKit
 import SwiftBoost
+import RxSwift
+import RxCocoa
+import CoreLocation
 
 final class WeatherViewController: UIViewController {
+    //MARK: - Props
+
+    let viewModel: WeatherViewModel
+    lazy var locationManager = CLLocationManager().do {
+        $0.delegate = self
+        $0.requestAlwaysAuthorization()
+    }
+
+    private var cellItems: [ForecastCollectionViewCell.Props] = []
+
     //MARK: - Views
 
     private lazy var searchBar = UISearchBar().do {
@@ -117,6 +130,19 @@ final class WeatherViewController: UIViewController {
         super.viewDidLoad()
         configure()
         makeConstraints()
+        viewModel.loadWeatherData(cityName: "Moscow")
+        binding()
+    }
+
+    //MARK: - Init
+
+    init(apiService: ApiService) {
+        viewModel = WeatherViewModel(apiService: apiService)
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 }
 
@@ -134,6 +160,49 @@ private extension WeatherViewController {
             forecastLabel,
             forecastCollectionView
         )
+    }
+
+    func binding() {
+        viewModel.weatherPublishRelay
+            .observe(on: MainScheduler())
+            .subscribe(onNext: { [weak self] responce in
+                guard let self else {return}
+
+                cityNameLabel.text = responce.name ?? ""
+                temperatureLabel.text = "\(responce.main?.temp ?? 0)°"
+                weatherLabel.text = "\(responce.weather?.first?.main ?? "")"
+                windSpeedNumberLabel.text = "\(responce.wind?.speed ?? 0)"
+                humidityNumberLabel.text = "\(responce.main?.humidity ?? 0)"
+                visabilityNumberLabel.text = "\(responce.visibility ?? 0)"
+                airNumberLabel.text =  "\(responce.main?.pressure ?? 0)"
+            })
+            .disposed(by: viewModel.disposeBag)
+
+        viewModel.forecastPublishRelay
+            .observe(on: MainScheduler())
+            .subscribe(onNext: {[weak self] result in
+                let items = result.list?.map { responce in
+                    return ForecastCollectionViewCell.Props(
+                        date: "\(responce.dt ?? 0)",
+                        temperature: "\(responce.main?.temp ?? 0)",
+                        weather: "\(responce.weather?.first?.main ?? "")"
+                    )
+                }
+                self?.cellItems = items ?? []
+                self?.forecastCollectionView.reloadData()
+        }).disposed(by: viewModel.disposeBag)
+
+        searchBar.rx.text
+            .orEmpty
+            .filter{
+                !$0.isEmpty
+            }
+            .debounce(.milliseconds(1000), scheduler: MainScheduler())
+            .distinctUntilChanged()
+            .subscribe {[weak self] text in
+                self?.viewModel.loadWeatherData(cityName: text)
+            }
+            .disposed(by: viewModel.disposeBag)
     }
 
     func makeConstraints() {
@@ -176,11 +245,10 @@ private extension WeatherViewController {
             $0.top.equalTo(forecastLabel.snp.bottom).offset(Constants.offset8)
             $0.height.equalTo(90)
         }
-
     }
 
     func makeWeatherStateLabel(_ labelText: String) -> UILabel {
-        lazy var label = UILabel().do {
+         let label = UILabel().do {
             $0.font = UIFont(name: "Optima Bold", size: Constants.fontSize16)
             $0.textColor = .black
             $0.textAlignment = .center
@@ -191,7 +259,7 @@ private extension WeatherViewController {
     }
 
     func makeWeatherStateNumberLabel() -> UILabel {
-        lazy var label = UILabel().do {
+         let label = UILabel().do {
             $0.font = UIFont(name: "Optima Regular", size: Constants.fontSize13)
             $0.textColor = .black
             $0.textAlignment = .center
@@ -202,7 +270,7 @@ private extension WeatherViewController {
     }
 
     func makeWeatherStateStack(_ nameLabel: UILabel, _ numberLabel: UILabel) -> UIStackView {
-        lazy var stack = UIStackView().do {
+         let stack = UIStackView().do {
             $0.axis = .vertical
             $0.spacing = 4
             $0.alignment = .center
@@ -218,13 +286,15 @@ private extension WeatherViewController {
 
 extension WeatherViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-//        items.count
-        4
+        cellItems.count
+//        4
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-//        let item = items[indexPath.item]
-        let cell = collectionView.dequeueReusableCell(withClass: ForecastCollectionViewCell.self, for: indexPath)
+        let item = cellItems[indexPath.item]
+        let cell = collectionView.dequeueReusableCell(withClass: ForecastCollectionViewCell.self, for: indexPath).do {
+            $0.updateViews(item)
+        }
 
 
         return cell
@@ -232,6 +302,12 @@ extension WeatherViewController: UICollectionViewDataSource, UICollectionViewDel
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: 120, height: collectionView.frame.height)
+    }
+}
+
+extension WeatherViewController: CLLocationManagerDelegate {
+    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+        debugPrint(status)
     }
 }
 

@@ -23,22 +23,6 @@ public struct WeatherResponce: Codable, Equatable {
     public let name: String?
     public let cod: Int?
 
-    enum CodingKeys: String, CodingKey {
-        case coord = "coord"
-        case weather = "weather"
-        case base = "base"
-        case main = "main"
-        case visibility = "visibility"
-        case wind = "wind"
-        case clouds = "clouds"
-        case dt = "dt"
-        case sys = "sys"
-        case timezone = "timezone"
-        case id = "id"
-        case name = "name"
-        case cod = "cod"
-    }
-
     public init(coord: Coord?, weather: [Weather]?, base: String?, main: Main?, visibility: Int?, wind: Wind?, clouds: Clouds?, dt: Int?, sys: Sys?, timezone: Int?, id: Int?, name: String?, cod: Int?) {
         self.coord = coord
         self.weather = weather
@@ -60,10 +44,6 @@ public struct WeatherResponce: Codable, Equatable {
 public struct Clouds: Codable, Equatable {
     public let all: Int?
 
-    enum CodingKeys: String, CodingKey {
-        case all = "all"
-    }
-
     public init(all: Int?) {
         self.all = all
     }
@@ -71,15 +51,15 @@ public struct Clouds: Codable, Equatable {
 
 // MARK: - Coord
 public struct Coord: Codable, Equatable {
-    public let lon: Int?
-    public let lat: Int?
+    public let lon: Double?
+    public let lat: Double?
 
     enum CodingKeys: String, CodingKey {
         case lon = "lon"
         case lat = "lat"
     }
 
-    public init(lon: Int?, lat: Int?) {
+    public init(lon: Double?, lat: Double?) {
         self.lon = lon
         self.lat = lat
     }

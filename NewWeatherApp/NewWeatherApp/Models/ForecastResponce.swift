@@ -68,15 +68,15 @@ public struct ForecastCity: Codable, Equatable {
 
 // MARK: - Coord
 public struct ForecastCoord: Codable, Equatable {
-    public let lat: Int?
-    public let lon: Int?
+    public let lat: Double?
+    public let lon: Double?
 
     enum CodingKeys: String, CodingKey {
         case lat = "lat"
         case lon = "lon"
     }
 
-    public init(lat: Int?, lon: Int?) {
+    public init(lat: Double?, lon: Double?) {
         self.lat = lat
         self.lon = lon
     }
@@ -191,9 +191,9 @@ public enum Pod: String, Codable, Equatable {
 // MARK: - Weather
 public struct ForecastWeather: Codable, Equatable {
     public let id: Int?
-    public let main: MainEnum?
-    public let description: Description?
-    public let icon: Icon?
+    public let main: String?
+    public let description: String?
+    public let icon: String?
 
     enum CodingKeys: String, CodingKey {
         case id = "id"
@@ -202,7 +202,7 @@ public struct ForecastWeather: Codable, Equatable {
         case icon = "icon"
     }
 
-    public init(id: Int?, main: MainEnum?, description: Description?, icon: Icon?) {
+    public init(id: Int?, main: String?, description: String?, icon: String?) {
         self.id = id
         self.main = main
         self.description = description
@@ -210,26 +210,26 @@ public struct ForecastWeather: Codable, Equatable {
     }
 }
 
-public enum Description: String, Codable, Equatable {
-    case brokenClouds = "broken clouds"
-    case clearSky = "clear sky"
-    case overcastClouds = "overcast clouds"
-    case scatteredClouds = "scattered clouds"
-}
+//public enum Description: String, Codable, Equatable {
+//    case brokenClouds = "broken clouds"
+//    case clearSky = "clear sky"
+//    case overcastClouds = "overcast clouds"
+//    case scatteredClouds = "scattered clouds"
+//}
 
-public enum Icon: String, Codable, Equatable {
-    case the01D = "01d"
-    case the01N = "01n"
-    case the03D = "03d"
-    case the03N = "03n"
-    case the04D = "04d"
-    case the04N = "04n"
-}
+//public enum Icon: String, Codable, Equatable {
+//    case the01D = "01d"
+//    case the01N = "01n"
+//    case the03D = "03d"
+//    case the03N = "03n"
+//    case the04D = "04d"
+//    case the04N = "04n"
+//}
 
-public enum MainEnum: String, Codable, Equatable {
-    case clear = "Clear"
-    case clouds = "Clouds"
-}
+//public enum MainEnum: String, Codable, Equatable {
+//    case clear = "Clear"
+//    case clouds = "Clouds"
+//}
 
 // MARK: - Wind
 public struct ForecastWind: Codable, Equatable {
