@@ -9,34 +9,51 @@ import UIKit
 import RxSwift
 import RxRelay
 
+protocol IWeatherViewModel {
+    var weatherObservable: Observable<WeatherResponce> { get }
+    var forecastObservable: Observable<ForecastResponce> { get }
+    func loadWeatherData(requestParams: WeatherRequestParams)
+}
+
 final class WeatherViewModel {
-    //MARK: Props
 
-    let apiService: ApiService
-    let disposeBag = DisposeBag()
+    //MARK: - Props
 
-    let weatherPublishRelay = PublishRelay<WeatherResponce>()
-    let forecastPublishRelay = PublishRelay<ForecastResponce>()
+    private let apiService: IApiService
 
-    //MARK: Init
+    private let weatherPublishRelay = PublishRelay<WeatherResponce>()
+    private let forecastPublishRelay = PublishRelay<ForecastResponce>()
 
-    init(apiService: ApiService) {
+    //MARK: - Init
+
+    init(apiService: IApiService) {
         self.apiService = apiService
     }
+}
 
-    //MARK: Methods
+//MARK: - IWeatherViewModel
 
-    func loadWeatherData(cityName: String) {
-        apiService.sendWeatherRequest(cityName: cityName, requestType: .GET) { [weak self] responce in
+extension WeatherViewModel: IWeatherViewModel {
+    var weatherObservable: Observable<WeatherResponce> {
+        weatherPublishRelay.asObservable()
+    }
+
+    var forecastObservable: Observable<ForecastResponce> {
+        forecastPublishRelay.asObservable()
+    }
+
+    func loadWeatherData(requestParams: WeatherRequestParams) {
+        apiService.sendWeatherRequest(requestParams: requestParams, requestType: .GET) { [weak self] responce in
             switch responce {
             case .success(let answer):
                 self?.weatherPublishRelay.accept(answer)
+                UserDefaultsService.lastCity = answer.name ?? ""
             case .failure(let error):
                 print(error)
             }
         }
 
-        apiService.sendForecastRequest(cityName: cityName, requestType: .GET) { [weak self] responce in
+        apiService.sendForecastRequest( requestParams: requestParams, requestType: .GET) { [weak self] responce in
             switch responce {
             case .success(let answer):
                 self?.forecastPublishRelay.accept(answer)
@@ -46,4 +63,3 @@ final class WeatherViewModel {
         }
     }
 }
-

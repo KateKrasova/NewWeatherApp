@@ -16,19 +16,48 @@ enum CustomError: Error {
     case badStatusCode
 }
 
-struct ApiService {
+enum WeatherRequestParams {
+    case byCityName(cityName: String)
+    case byCoordinates(lat: Double, lon: Double)
+}
 
-    let baseURL = "https://api.openweathermap.org"
-    let apiKey = "ba4f434450c83f44645470b61ee14800"
+protocol IApiService {
+   func sendWeatherRequest(
+    requestParams: WeatherRequestParams,
+    requestType: RequestType,
+    completion: @escaping (Result<WeatherResponce, Error>) -> Void
+   )
 
-    func sendWeatherRequest(cityName: String, requestType: RequestType, completion: @escaping (Result<WeatherResponce, Error>) -> Void) {
+    func sendForecastRequest(
+        requestParams: WeatherRequestParams,
+        requestType: RequestType,
+        completion: @escaping (Result<ForecastResponce, Error>) -> Void
+    )
+}
+
+struct ApiService: IApiService {
+
+    private let baseURL = "https://api.openweathermap.org"
+    private let apiKey = "ba4f434450c83f44645470b61ee14800"
+
+    func sendWeatherRequest(requestParams: WeatherRequestParams, requestType: RequestType, completion: @escaping (Result<WeatherResponce, Error>) -> Void) {
         var urlComponents = URLComponents(string: "\(baseURL)/data/2.5/weather")
 
-        urlComponents?.queryItems = [
-            .init(name: "q", value: "\(cityName)"),
-            .init(name: "appid", value: apiKey),
-            .init(name: "units", value: "metric")
-        ]
+        switch requestParams {
+        case .byCityName(let cityName):
+            urlComponents?.queryItems = [
+                .init(name: "q", value: "\(cityName)"),
+                .init(name: "appid", value: apiKey),
+                .init(name: "units", value: "metric")
+            ]
+        case let .byCoordinates(lat, lon):
+            urlComponents?.queryItems = [
+                .init(name: "lat", value: "\(lat)"),
+                .init(name: "lon", value: "\(lon)"),
+                .init(name: "appid", value: apiKey),
+                .init(name: "units", value: "metric")
+            ]
+        }
 
         guard let url = urlComponents?.url else { return }
 
@@ -58,17 +87,26 @@ struct ApiService {
         }
         
         task.resume()
-
     }
 
-    func sendForecastRequest(cityName: String, requestType: RequestType, completion: @escaping (Result<ForecastResponce, Error>) -> Void) {
+    func sendForecastRequest(requestParams: WeatherRequestParams, requestType: RequestType, completion: @escaping (Result<ForecastResponce, Error>) -> Void) {
         var urlComponents = URLComponents(string: "\(baseURL)/data/2.5/forecast")
 
-        urlComponents?.queryItems = [
-            .init(name: "q", value: "\(cityName)"),
-            .init(name: "appid", value: apiKey),
-            .init(name: "units", value: "metric")
-        ]
+        switch requestParams {
+        case .byCityName(let cityName):
+            urlComponents?.queryItems = [
+                .init(name: "q", value: "\(cityName)"),
+                .init(name: "appid", value: apiKey),
+                .init(name: "units", value: "metric")
+            ]
+        case let .byCoordinates(lat, lon):
+            urlComponents?.queryItems = [
+                .init(name: "lat", value: "\(lat)"),
+                .init(name: "lon", value: "\(lon)"),
+                .init(name: "appid", value: apiKey),
+                .init(name: "units", value: "metric")
+            ]
+        }
 
         guard let url = urlComponents?.url else { return }
 

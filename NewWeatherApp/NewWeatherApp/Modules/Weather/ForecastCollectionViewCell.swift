@@ -21,31 +21,28 @@ final class ForecastCollectionViewCell: UICollectionViewCell {
 
     private lazy var dateLabel = UILabel().do {
         $0.textColor = UIColor(named: "pink")
-        $0.font = UIFont(name: "Optima Bold", size: 18)
+        $0.font = UIFont(name: "Optima Bold", size: Constants.font18)
         $0.textAlignment = .center
         $0.numberOfLines = 1
-        $0.text = "23.05.2023"
     }
 
     private lazy var temperatureLabel = UILabel().do {
         $0.textColor = .darkGray
-        $0.font = UIFont(name: "Optima Bold", size: 18)
+        $0.font = UIFont(name: "Optima Bold", size: Constants.font18)
         $0.textAlignment = .center
         $0.numberOfLines = 1
-        $0.text = "3°"
     }
 
     private lazy var weatherLabel = UILabel().do {
         $0.textColor = .darkGray
-        $0.font = UIFont(name: "Optima Regular", size: 15)
+        $0.font = UIFont(name: "Optima Regular", size: Constants.font15)
         $0.textAlignment = .center
         $0.numberOfLines = 1
-        $0.text = "Sunny"
     }
 
     private lazy var weatherStack = UIStackView().do {
         $0.axis = .vertical
-        $0.spacing = 4
+        $0.spacing = Constants.offset4
         $0.addArrangedSubview(dateLabel)
         $0.addArrangedSubview(temperatureLabel)
         $0.addArrangedSubview(weatherLabel)
@@ -81,7 +78,7 @@ private extension ForecastCollectionViewCell {
     func configure() {
 
         backgroundColor = .white
-        layer.cornerRadius = 8
+        layer.cornerRadius = Constants.cornerRadius
         clipsToBounds = true
 
         contentView.addSubviews(
@@ -93,5 +90,17 @@ private extension ForecastCollectionViewCell {
         weatherStack.snp.makeConstraints {
             $0.center.equalToSuperview()
         }
+    }
+}
+
+// MARK: - Constants
+
+private extension ForecastCollectionViewCell {
+    enum Constants {
+        static let cornerRadius: CGFloat = 8
+
+        static let font18: CGFloat = 18
+        static let font15: CGFloat = 15
+        static let offset4: CGFloat = 4
     }
 }

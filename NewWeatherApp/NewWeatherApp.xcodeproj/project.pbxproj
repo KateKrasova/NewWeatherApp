@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2192A6C52ADC2C2A0017CD34 /* UserDefaultsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2192A6C42ADC2C2A0017CD34 /* UserDefaultsService.swift */; };
 		21CACC0A2AD5CD6C00718C9E /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21CACC092AD5CD6C00718C9E /* AppDelegate.swift */; };
 		21CACC0C2AD5CD6C00718C9E /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21CACC0B2AD5CD6C00718C9E /* SceneDelegate.swift */; };
 		21CACC0E2AD5CD6C00718C9E /* WeatherViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21CACC0D2AD5CD6C00718C9E /* WeatherViewController.swift */; };
@@ -21,6 +22,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2192A6C42ADC2C2A0017CD34 /* UserDefaultsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsService.swift; sourceTree = "<group>"; };
 		21CACC062AD5CD6C00718C9E /* NewWeatherApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NewWeatherApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		21CACC092AD5CD6C00718C9E /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		21CACC0B2AD5CD6C00718C9E /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -121,6 +123,7 @@
 			isa = PBXGroup;
 			children = (
 				21CD526C2AD6C55900BDDA25 /* ApiService.swift */,
+				2192A6C42ADC2C2A0017CD34 /* UserDefaultsService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -271,6 +274,7 @@
 				21CD526B2AD6C23700BDDA25 /* ForecastResponce.swift in Sources */,
 				21CACC0A2AD5CD6C00718C9E /* AppDelegate.swift in Sources */,
 				21CD526F2AD7205000BDDA25 /* WeatherViewModel.swift in Sources */,
+				2192A6C52ADC2C2A0017CD34 /* UserDefaultsService.swift in Sources */,
 				21CD526D2AD6C55900BDDA25 /* ApiService.swift in Sources */,
 				21CACC0C2AD5CD6C00718C9E /* SceneDelegate.swift in Sources */,
 			);
@@ -415,6 +419,8 @@
 				DEVELOPMENT_TEAM = T5826VSXK9;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NewWeatherApp/Resources/Info.plist;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app need your location to provide best feature based on location";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app need your location to provide best feature based on location";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
@@ -447,6 +453,8 @@
 				DEVELOPMENT_TEAM = T5826VSXK9;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NewWeatherApp/Resources/Info.plist;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "This app need your location to provide best feature based on location";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "This app need your location to provide best feature based on location";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;

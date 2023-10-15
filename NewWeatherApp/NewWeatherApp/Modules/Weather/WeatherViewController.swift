@@ -15,10 +15,11 @@ import CoreLocation
 final class WeatherViewController: UIViewController {
     //MARK: - Props
 
-    let viewModel: WeatherViewModel
-    lazy var locationManager = CLLocationManager().do {
+    private let viewModel: IWeatherViewModel
+    private let disposeBag = DisposeBag()
+
+    private lazy var locationManager = CLLocationManager().do {
         $0.delegate = self
-        $0.requestAlwaysAuthorization()
     }
 
     private var cellItems: [ForecastCollectionViewCell.Props] = []
@@ -31,37 +32,34 @@ final class WeatherViewController: UIViewController {
     }
 
     private lazy var cityNameLabel = UILabel().do {
-        $0.font = UIFont(name: "Optima Bold", size: 32)
+        $0.font = UIFont(name: "Optima Bold", size: Constants.fontSize32)
         $0.textColor = UIColor(named: "pink")
         $0.numberOfLines = 0
         $0.textAlignment = .center
-        $0.text = "Moscow"
     }
     
     private lazy var temperatureLabel = UILabel().do {
-        $0.font = UIFont(name: "Optima Bold", size: 35)
+        $0.font = UIFont(name: "Optima Bold", size: Constants.fontSize35)
         $0.textColor = .darkGray
         $0.textAlignment = .center
-        $0.text = "3°"
     }
 
     private lazy var weatherLabel = UILabel().do {
-        $0.font = UIFont(name: "Optima Regular", size: 20)
+        $0.font = UIFont(name: "Optima Regular", size: Constants.fontSize20)
         $0.textColor = .darkGray
         $0.textAlignment = .center
-        $0.text = "Rain"
     }
 
     private lazy var topView = UIView().do {
         $0.backgroundColor = .white
-        $0.layer.cornerRadius = 12
+        $0.layer.cornerRadius = Constants.cornerRadius
         $0.clipsToBounds = true
         $0.addSubview(weatherInfoStack)
     }
 
     private lazy var weatherInfoStack = UIStackView().do {
         $0.axis = .vertical
-        $0.spacing = 8
+        $0.spacing = Constants.offset8
         $0.alignment = .center
         $0.addArrangedSubview(cityNameLabel)
         $0.addArrangedSubview(temperatureLabel)
@@ -80,13 +78,13 @@ final class WeatherViewController: UIViewController {
     private lazy var humidityNumberLabel = makeWeatherStateNumberLabel()
     private lazy var humidityStack = makeWeatherStateStack(humidityLabel, humidityNumberLabel)
 
-    private lazy var airLabel = makeWeatherStateLabel("Air")
+    private lazy var airLabel = makeWeatherStateLabel("Air Pressure")
     private lazy var airNumberLabel = makeWeatherStateNumberLabel()
     private lazy var airStack = makeWeatherStateStack(airLabel, airNumberLabel)
 
     private lazy var leftWeatherStateStack = UIStackView().do {
         $0.axis = .vertical
-        $0.spacing = 16
+        $0.spacing = Constants.offset16
         $0.alignment = .center
         $0.addArrangedSubview(windSpeedStack)
         $0.addArrangedSubview(humidityStack)
@@ -94,14 +92,14 @@ final class WeatherViewController: UIViewController {
 
     private lazy var rightWeatherStateStack = UIStackView().do {
         $0.axis = .vertical
-        $0.spacing = 16
+        $0.spacing = Constants.offset16
         $0.alignment = .center
         $0.addArrangedSubview(visabilityStack)
         $0.addArrangedSubview(airStack)
     }
 
     private lazy var forecastLabel = UILabel().do {
-        $0.font = UIFont(name: "Optima Bold", size: 32)
+        $0.font = UIFont(name: "Optima Bold", size: Constants.fontSize32)
         $0.textColor = .darkGray
         $0.numberOfLines = 0
         $0.textAlignment = .left
@@ -124,19 +122,32 @@ final class WeatherViewController: UIViewController {
         return collectionView
     }()
 
+    private lazy var locationButton = UIButton(type: .system).do {
+        $0.setImage(UIImage(systemName: "location.fill"), for: .normal)
+        $0.tintColor = .black
+        $0.addTarget(self, action: #selector(locationTapped), for: .touchUpInside)
+    }
+
     //MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         configure()
         makeConstraints()
-        viewModel.loadWeatherData(cityName: "Moscow")
+        
+        if UserDefaultsService.lastCity.isEmpty {
+            locationManager.requestAlwaysAuthorization()
+        } else {
+            viewModel.loadWeatherData(requestParams: .byCityName(cityName: UserDefaultsService.lastCity))
+        }
+
         binding()
     }
 
     //MARK: - Init
 
-    init(apiService: ApiService) {
+    init(apiService: IApiService) {
         viewModel = WeatherViewModel(apiService: apiService)
         super.init(nibName: nil, bundle: nil)
     }
@@ -158,51 +169,65 @@ private extension WeatherViewController {
             leftWeatherStateStack,
             rightWeatherStateStack,
             forecastLabel,
-            forecastCollectionView
+            forecastCollectionView,
+            locationButton
         )
+
+        let recognizer = UITapGestureRecognizer(target: self, action: #selector(touchOnScreen))
+
+        view.addGestureRecognizer(recognizer)
     }
 
     func binding() {
-        viewModel.weatherPublishRelay
+        viewModel.weatherObservable
             .observe(on: MainScheduler())
             .subscribe(onNext: { [weak self] responce in
                 guard let self else {return}
 
                 cityNameLabel.text = responce.name ?? ""
-                temperatureLabel.text = "\(responce.main?.temp ?? 0)°"
+                temperatureLabel.text = "\(String(format: "%.1f", responce.main?.temp ?? 0))°"
                 weatherLabel.text = "\(responce.weather?.first?.main ?? "")"
                 windSpeedNumberLabel.text = "\(responce.wind?.speed ?? 0)"
                 humidityNumberLabel.text = "\(responce.main?.humidity ?? 0)"
                 visabilityNumberLabel.text = "\(responce.visibility ?? 0)"
                 airNumberLabel.text =  "\(responce.main?.pressure ?? 0)"
             })
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
 
-        viewModel.forecastPublishRelay
+        viewModel.forecastObservable
             .observe(on: MainScheduler())
             .subscribe(onNext: {[weak self] result in
                 let items = result.list?.map { responce in
+                    let date = Date(timeIntervalSince1970: Double(responce.dt ?? -1))
+                    let dateFormatter = DateFormatter()
+                    dateFormatter.dateFormat = "dd.MM HH:mm"
+                    let formattedDate = dateFormatter.string(from: date)
+
                     return ForecastCollectionViewCell.Props(
-                        date: "\(responce.dt ?? 0)",
-                        temperature: "\(responce.main?.temp ?? 0)",
+                        date: formattedDate,
+                        temperature: " \(String(format: "%.1f", responce.main?.temp ?? 0))°",
                         weather: "\(responce.weather?.first?.main ?? "")"
                     )
                 }
                 self?.cellItems = items ?? []
                 self?.forecastCollectionView.reloadData()
-        }).disposed(by: viewModel.disposeBag)
+        })
+            .disposed(by: disposeBag)
 
         searchBar.rx.text
             .orEmpty
-            .filter{
-                !$0.isEmpty
+            .skip(1)
+            .filter{ [weak self] in
+                guard $0.isEmpty else { return true }
+                self?.locationManager.requestLocation()
+                return false
             }
             .debounce(.milliseconds(1000), scheduler: MainScheduler())
             .distinctUntilChanged()
             .subscribe {[weak self] text in
-                self?.viewModel.loadWeatherData(cityName: text)
+                self?.viewModel.loadWeatherData(requestParams: .byCityName(cityName: text))
             }
-            .disposed(by: viewModel.disposeBag)
+            .disposed(by: disposeBag)
     }
 
     func makeConstraints() {
@@ -227,12 +252,12 @@ private extension WeatherViewController {
 
         leftWeatherStateStack.snp.makeConstraints {
             $0.top.equalTo(topView.snp.bottom).offset(Constants.offset16)
-            $0.centerX.equalToSuperview().offset(-70)
+            $0.centerX.equalToSuperview().offset(-Constants.offset70)
         }
 
         rightWeatherStateStack.snp.makeConstraints {
             $0.top.equalTo(topView.snp.bottom).offset(Constants.offset16)
-            $0.centerX.equalToSuperview().offset(70)
+            $0.centerX.equalToSuperview().offset(Constants.offset70)
         }
 
         forecastLabel.snp.makeConstraints {
@@ -243,7 +268,12 @@ private extension WeatherViewController {
         forecastCollectionView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(Constants.offset16)
             $0.top.equalTo(forecastLabel.snp.bottom).offset(Constants.offset8)
-            $0.height.equalTo(90)
+            $0.height.equalTo(Constants.collectionHeight)
+        }
+
+        locationButton.snp.makeConstraints {
+            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom)
+            $0.trailing.equalToSuperview().inset(Constants.offset16)
         }
     }
 
@@ -272,13 +302,23 @@ private extension WeatherViewController {
     func makeWeatherStateStack(_ nameLabel: UILabel, _ numberLabel: UILabel) -> UIStackView {
          let stack = UIStackView().do {
             $0.axis = .vertical
-            $0.spacing = 4
+            $0.spacing = Constants.offset4
             $0.alignment = .center
             $0.addArrangedSubview(nameLabel)
             $0.addArrangedSubview(numberLabel)
         }
 
         return stack
+    }
+
+    @objc
+    func locationTapped() {
+        locationManager.requestLocation()
+    }
+
+    @objc
+    func touchOnScreen() {
+        view.endEditing(true)
     }
 }
 
@@ -287,7 +327,6 @@ private extension WeatherViewController {
 extension WeatherViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         cellItems.count
-//        4
     }
 
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -296,18 +335,37 @@ extension WeatherViewController: UICollectionViewDataSource, UICollectionViewDel
             $0.updateViews(item)
         }
 
-
         return cell
     }
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: 120, height: collectionView.frame.height)
+        return CGSize(width: Constants.collectionCellWidth, height: collectionView.frame.height)
     }
 }
 
+// MARK: - CLLocationManagerDelegate
 extension WeatherViewController: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        debugPrint(status)
+        switch status {
+
+        case .notDetermined:
+            print("When user did not yet determined")
+        case .denied:
+            print("When user select option Dont't Allow")
+        default:
+            print("default")
+            locationManager.requestLocation()
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+
+        viewModel.loadWeatherData(requestParams: .byCoordinates(lat: location.coordinate.latitude, lon: location.coordinate.longitude))
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        print("error: \(error.localizedDescription)")
     }
 }
 
@@ -316,11 +374,21 @@ extension WeatherViewController: CLLocationManagerDelegate {
 private extension WeatherViewController {
     enum Constants {
         static let offset8: CGFloat = 8
+        static let offset4: CGFloat = 4
         static let offset16: CGFloat = 16
         static let offset32: CGFloat = 32
+        static let offset70: CGFloat = 70
 
         static let fontSize13: CGFloat = 13
         static let fontSize16: CGFloat = 16
+        static let fontSize20: CGFloat = 20
+        static let fontSize32: CGFloat = 32
+        static let fontSize35: CGFloat = 35
+
+        static let cornerRadius: CGFloat = 12
+
+        static let collectionHeight: CGFloat = 90
+        static let collectionCellWidth: CGFloat = 120
     }
 }
 
